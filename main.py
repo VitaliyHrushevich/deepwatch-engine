@@ -1,56 +1,60 @@
+import sys
 import os
+from pathlib import Path
+
+# 1. Path configuration
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.append(str(BASE_DIR))
+
 from src.generator import generate_server_metrics
 from src.models import AnomalyDetector
-import matplotlib
-"""
-
-"""
 
 def main():
-    # Настраиваем пути относительно корня
-    DATA_PATH = 'data/server_metrics.parquet'
-    MODEL_PATH = 'models/anomaly_model.joblib'
+    # Configure paths through Pathlib for reliability
+    DATA_DIR = BASE_DIR / "data"
+    MODEL_DIR = BASE_DIR / "models"
+    DATA_PATH = DATA_DIR / "server_metrics.parquet"
+    MODEL_PATH = MODEL_DIR / "anomaly_model.joblib"
 
-    print("🚀 DeepWatch Engine: Starting Pipeline...")
+    print("🚀 DeepWatch Engine: Initializing Pipeline...")
 
-    # 1. Сбор данных
-    if not os.path.exists(DATA_PATH):
-        print("📥 Data not found. Generating...")
-        os.makedirs('data', exist_ok=True)
+    # 1. Data Ingestion & Generation
+    if not DATA_PATH.exists():
+        print("📥 Telemetry data not found. Running generator...")
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         df = generate_server_metrics(days=30)
         df.to_parquet(DATA_PATH)
+    else:
+        print(f"✅ Telemetry data found at {DATA_PATH}")
 
-    # 2. Инициализация и работа модели
-    # (Мы используем наш ООП-класс из src/models.py)
+    # 2. Model Orchestration
     detector = AnomalyDetector(contamination=0.01)
 
-    # Загружаем через DuckDB (метод внутри класса)
     raw_data = detector.load_data(DATA_PATH)
 
+    # Data Quality Check
     if raw_data.isnull().values.any():
-        print("⚠️ Внимание: Обнаружены пропуски в данных! Очистка...")
+        print("⚠️ Data Quality Alert: Missing values detected. Cleaning...")
         raw_data = raw_data.dropna()
 
-    # Обучаем
+    # ML Workflow: Train -> Predict -> Save
     detector.train(raw_data)
-
-    # Предсказываем
     results = detector.predict(raw_data)
-
-    # 3. Сохранение результата
     detector.save_model(MODEL_PATH)
 
+    # 3. Output & Insights
     anomalies_count = len(results[results['anomaly_score'] == -1])
-    print(f"✅ Pipeline Finished! Found {anomalies_count} anomalies.")
-    print(f"📊 Model weights saved to {MODEL_PATH}")
+    print(f"\n" + "="*40)
+    print(f"✅ PIPELINE FINISHED!")
+    print(f"🔹 Detected Anomalies: {anomalies_count}")
+    print(f"🔹 Model Artifact: {MODEL_PATH}")
+    print("="*40)
 
-    results = detector.predict(raw_data)
-
-    # ВОТ ОН — ПОБЕДНЫЙ ВЫЗОВ:
     detector.plot_results(results)
-
-    detector.save_model(MODEL_PATH)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"🛑 Critical Pipeline Failure: {e}")

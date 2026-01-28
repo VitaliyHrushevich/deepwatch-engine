@@ -1,23 +1,45 @@
 import duckdb
+from pathlib import Path
+
+# Path constants
+DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "server_metrics.parquet"
 
 
-def find_anomalies():
+def extract_critical_metrics(threshold: float = 90.0):
+    """
+    Performs high performance data filtering using DuckDB.
+    """
+    if not DATA_PATH.exists():
+        print(f"❌ Файл не найден: {DATA_PATH}")
+        return
+
+    # Connect to DuckDB (in-memory)
     con = duckdb.connect()
 
-    # Этот запрос ищет все моменты, где нагрузка была экстремальной
-    query = """
+    query = f"""
     SELECT 
         timestamp, 
-        cpu_load 
-    FROM '../data/server_metrics.parquet'
-    WHERE cpu_load > 90
+        cpu_load,
+        ram_usage
+    FROM '{DATA_PATH}'
+    WHERE cpu_load > {threshold}
     ORDER BY timestamp
     """
 
-    print("🔍 Ищу критические скачки нагрузки (CPU > 90%)...")
-    df_anomalies = con.execute(query).df()
-    print(df_anomalies)
+    print(f"🔍 Сканирование Parquet... Фильтр: CPU > {threshold}%")
+
+    try:
+        df_critical = con.execute(query).df()
+
+        if not df_critical.empty:
+            print(f"✅ Найдено {len(df_critical)} критических записей.")
+            return df_critical
+        else:
+            print("📭 Критических скачков не обнаружено.")
+            return None
+    except Exception as e:
+        print(f"🛑 Ошибка при выполнении SQL: {e}")
 
 
 if __name__ == "__main__":
-    find_anomalies()
+    extract_critical_metrics()

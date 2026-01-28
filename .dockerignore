@@ -1,0 +1,28 @@
+# Python мусор
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Данные (самое важное, Parquet может весить много)
+data/
+*.parquet
+*.csv
+
+# Артефакты моделей (сохраненные веса .joblib)
+models/
+*.joblib
+
+# Отчеты и визуализации
+reports/
+*.png
+
+# Настройки IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Логи
+*.log
