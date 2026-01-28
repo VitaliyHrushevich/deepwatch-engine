@@ -209,3 +209,17 @@ data/
 .DS_Store
 models/
 *.parquet
+
+
+# Среда
+.venv/
+
+# ДАННЫЕ (Самое важное!)
+*.csv
+
+# МОДЕЛИ И ОТЧЕТЫ
+reports/
+*.joblib
+*.png
+
+# Система
