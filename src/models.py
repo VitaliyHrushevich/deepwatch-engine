@@ -3,7 +3,6 @@ import duckdb
 import joblib
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import Optional
 from sklearn.ensemble import IsolationForest
 
 

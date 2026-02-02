@@ -1,13 +1,12 @@
 import sys
-import os
 from pathlib import Path
+from src.generator import generate_server_metrics
+from src.models import AnomalyDetector
 
 # 1. Path configuration
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 
-from src.generator import generate_server_metrics
-from src.models import AnomalyDetector
 
 def main():
     # Configure paths through Pathlib for reliability
